@@ -1,0 +1,59 @@
+Random Forest 
+
+cd $RCAC_SCRATCH
+cd qiime/rf-classifier
+sinteractive -A microbiome -t 2:30:00 -n4
+module load conda
+conda activate qiime2-amplicon-2024.10
+conda info
+
+wget \
+  -O "moving-pictures-sample-metadata.tsv" \
+  "https://data.qiime2.org/2024.10/tutorials/moving-pictures/sample_metadata.tsv"
+
+wget \
+  -O "moving-pictures-table.qza" \
+  "https://data.qiime2.org/2024.10/tutorials/sample-classifier/moving-pictures-table.qza"
+
+qiime sample-classifier classify-samples \
+  --i-table table.qza \
+  --m-metadata-file SIgAProject_Metadata.txt \
+  --m-metadata-column Diet\
+  --p-optimize-feature-selection \
+  --p-parameter-tuning \
+  --p-estimator RandomForestClassifier \
+  --p-n-estimators 20 \
+  --p-random-state 123 \
+  --output-dir SIgA_classifier
+
+qiime metadata tabulate \
+  --m-input-file SIgA_classifier/predictions.qza \
+  --o-visualization  SIgA_classifier/predictions.qzv
+
+
+
+qiime metadata tabulate \
+  --m-input-file SIgA_classifier/probabilities.qza \
+  --o-visualization SIgA_classifier/probabilities.qzv
+
+qiime metadata tabulate \
+  --m-input-file SIgA_classifier/feature_importance.qza \
+  --o-visualization SIgA_classifier/feature_importance.qzv
+
+qiime feature-table filter-features \
+  --i-table table.qza \
+  --m-metadata-file SIgA_classifier/feature_importance.qza \
+  --o-filtered-table SIgA_classifier/important-feature-table.qza
+
+qiime sample-classifier heatmap \
+  --i-table table.qza \
+  --i-importance SIgA_classifier/feature_importance.qza \
+  --m-sample-metadata-file SIgAProject_Metadata.txt \
+  --m-sample-metadata-column Diet\
+  --p-group-samples \
+  --p-feature-count 30 \
+  --o-filtered-table SIgA_classifier/important-feature-table-top-30.qza \
+  --o-heatmap SIgA_classifier/important-feature-heatmap.qzv
+
+
+
